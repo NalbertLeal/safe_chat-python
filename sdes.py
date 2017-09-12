@@ -3,6 +3,7 @@ class sdes():
 
 	#CIPHER = sdes(14)
 	#CIPHER.encode(message)
+	#CIPHER.decode(cipheredMessage)
 
 	def __init__(self, key):
 		
@@ -15,14 +16,6 @@ class sdes():
 
 		self.sdesK1K2(key)
 
-	def startWithKey(self, key, message):
-		
-		k10 = key
-		
-		sdesK1K2(key)
-
-		Encode(message)
-
 	def Encode(self, message):
 		
 		finalMessageBytes = message.encode()
@@ -34,7 +27,7 @@ class sdes():
 
 		OriginalBlockPart2 = 0
 
-		for index in range(0, len(finalMessageBytes))
+		for index in range(0, len(finalMessageBytes)):
 
 			block = self.ip( finalMessageBytes[index] )
 
@@ -47,7 +40,7 @@ class sdes():
 			blockPart2 = block << 12
 			blockPart2 = blockPart2 >> 12
 
-			OriginalBlockPart2 = blockPart2 // will be used in the end
+			OriginalBlockPart2 = blockPart2 # will be used in the end
 
 			# Expansion of the blockPart2
 			blockPart2 = self.ep(blockPart2)
@@ -122,7 +115,7 @@ class sdes():
 			blockPart2 = block << 12
 			blockPart2 = blockPart2 >> 12
 
-			OriginalBlockPart2 = blockPart2 // will be used in the end
+			OriginalBlockPart2 = blockPart2 # will be used in the end
 
 			# Expansion of the blockPart2
 			blockPart2 = self.ep(blockPart2)
@@ -184,7 +177,7 @@ class sdes():
 
 		OriginalBlockPart2 = 0
 
-		for index in range(0, len(finalMessageBytes))
+		for index in range(0, len(finalMessageBytes)):
 			block = self.ip( finalMessageBytes[index] )
 
 			# get part 1 and part 2 from IP result
@@ -196,7 +189,7 @@ class sdes():
 			blockPart2 = block << 12
 			blockPart2 = blockPart2 >> 12
 
-			OriginalBlockPart2 = blockPart2 // will be used in the end
+			OriginalBlockPart2 = blockPart2 # will be used in the end
 
 			# Expansion of the blockPart2
 			blockPart2 = self.ep(blockPart2)
@@ -271,7 +264,7 @@ class sdes():
 			blockPart2 = block << 12
 			blockPart2 = blockPart2 >> 12
 
-			OriginalBlockPart2 = blockPart2 // will be used in the end
+			OriginalBlockPart2 = blockPart2 # will be used in the end
 
 			# Expansion of the blockPart2
 			blockPart2 = self.ep(blockPart2)
@@ -427,7 +420,7 @@ class sdes():
 		tempKp8 = tempKp8 | tempK10
 
 		############################  atribuição k1p8  ############################
-		k1p8 = tempKp8
+		self.k1p8 = tempKp8
 		############################  atribuição k1p8  ############################
 
 		# shift 2 part 1.1 ---------------------------------------
@@ -575,7 +568,7 @@ class sdes():
 		tempKp8 = tempKp8 | tempK10
 
 		############################  atribuição k2p8  ############################
-		k2p8 = tempKp8
+		self.k2p8 = tempKp8
 		############################  atribuição k2p8  ############################
 
 	# initial permutation
@@ -759,9 +752,9 @@ class sdes():
 	  j2 = blockPart22 << 14
 	  j2 = j2 >> 14
 
-	  resultPart1 = tableS0[j1][i1] << 2
+	  resultPart1 = self.tableS0[j1][i1] << 2
 
-	  resultPart2 = tableS1[j2][i2]
+	  resultPart2 = self.tableS1[j2][i2]
 
 	  return (resultPart1 | resultPart2)
 
