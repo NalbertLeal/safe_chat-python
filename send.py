@@ -9,3 +9,8 @@ class Send():
         self.msg = msg
         if self.con != None:
             self.con.send(str.encode(self.msg))
+
+    def put_bytes(self, bytes):
+        self.msg = bytes
+        if self.con != None:
+            self.con.send(self.msg)
