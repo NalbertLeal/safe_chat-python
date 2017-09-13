@@ -19,7 +19,7 @@ class Server():
             send.con = con
             print('connected: ', client)
             while True:
-                msg = con.recv(1024)
+                msg = con.recv(1024 * 1024 * 10)
                 if not msg:
                     break
                 # print('$ ' + str(msg, 'utf-8'))

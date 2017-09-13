@@ -20,7 +20,7 @@ class Client():
         while True:
             send.con = tcp
             while True:
-                msg = tcp.recv(1024)
+                msg = tcp.recv(1024 * 1024 * 10)
                 # print('$ ' + str(msg,'utf-8') )
                 bmp_processor.write_img('img_received.BMP', msg)
                 msg = bmp_processor.read_img_message('img_received.BMP')
