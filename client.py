@@ -4,12 +4,19 @@ import socket
 HOST = '127.0.0.1'
 PORT = 5000
 
-tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-dest = (HOST, PORT)
-tcp.connect(dest)
-print('Para sair use CTRL+X\n')
-msg = input()
-while msg != '':
-    tcp.send(msg.encode())
-    msg = input()
-tcp.close()
+class Client():
+    def __init__(self, user, host='127.0.0.1', port=3000):
+        self.user = user
+        self.host = host
+        self.port = port
+
+    def run(self):
+        tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        dest = (HOST, PORT)
+        tcp.connect(dest)
+        print('Para sair use CTRL+X\n')
+        msg = input()
+        while msg != '':
+            tcp.send(msg.encode())
+            msg = input()
+        tcp.close()
