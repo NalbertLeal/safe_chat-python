@@ -1,760 +1,202 @@
+import binascii
 
-class sdes():
+pot2 = [512, 256, 128, 64, 32, 16, 8, 4, 2, 1]
+p10 = [3, 5, 2, 7, 4, 10, 1, 9, 8, 6]
+p8 = [6, 3, 7, 4, 8, 5, 10, 9]
+ep = [4, 1, 2, 3, 2, 3, 4, 1]
+p4 = [2, 4, 3, 1]
+ls1 = [2, 3, 4, 5, 1, 7, 8, 9, 10, 6]
+ls2 = [3, 4, 5, 1, 2, 8, 9, 10, 6, 7]
+sw = [5, 6, 7, 8, 1, 2, 3, 4]
+tableS0 = [[1, 0, 3, 2], [3, 2, 1, 0], [0, 2, 1, 3], [3, 1, 3, 2]]
+tableS1 = [[1, 1, 2, 3], [2, 0, 1, 3], [3, 0, 1, 0], [2, 1, 0, 3]]
 
-	#CIPHER = sdes(14)
-	#CIPHER.encode(message)
-	#CIPHER.decode(cipheredMessage)
+class des():
 
 	def __init__(self, key):
-		
+
 		self.k10 = key
 		self.k1p8 = 0
 		self.k2p8 = 0
 
-		self.tableS0 = [[1, 0, 3, 2], [3, 2, 1, 0], [0, 2, 1, 3], [3, 1, 3, 2]]
-		self.tableS1 = [[1, 1, 2, 3], [2, 0, 1, 3], [3, 0, 1, 0], [2, 1, 0, 3]]
-
-		self.sdesK1K2(key)
+		self.sdesK1K2()
 
 	def Encode(self, message):
-		
-		finalMessageBytes = message.encode()
+		encoded = ''
+		for i in range(0, len(message)):
+			#muda o valor do char para uma string com os valores binarios dele, trazendo formatado em 8 bits
+			inBin = charToBinaryStringFormat(message[i])
+			print(inBin)
+			#fk ocorre uma vez com a primeira chave
+			ip = self.encodeFK(inBin, self.k1p8)
+			#SW switch transposicao do resultado de fK, trocando os primeiros 4 bits com os ultimos 4 bits
+			#ipa = permutation(sw, ip)
+			ip = permutation(sw, ip)
+			#fk ocorre uma vez com a segunda chave
+			ip1 = self.encodeFK(ip, self.k2p8)
+			#print(inBin, "=>>", ip1)
+			#print(binaryStringToChar(inBin), "=>>", binaryStringToChar(ip1))
+			#print(ip1, "=", charToBinaryStringFormat(binaryStringToChar(ip1)), "/char:", binaryStringToChar(ip1))
+			encoded = encoded + ip1 #binaryStringToChar(ip1)
 
-		block = 0
-
-		blockPart1 = 0
-		blockPart2 = 0
-
-		OriginalBlockPart2 = 0
-
-		for index in range(0, len(finalMessageBytes)):
-
-			block = self.ip( finalMessageBytes[index] )
-
-			# get part 1 and part 2 from IP result
-
-			blockPart1 = block >> 4
-			blockPart1 = blockPart1 << 12
-			blockPart1 = blockPart1 >> 8
-
-			blockPart2 = block << 12
-			blockPart2 = blockPart2 >> 12
-
-			OriginalBlockPart2 = blockPart2 # will be used in the end
-
-			# Expansion of the blockPart2
-			blockPart2 = self.ep(blockPart2)
-
-			# xor
-			blockPart2 = (blockPart2 ^ self.k1p8)
-
-			# divide in 2 parts the blockPart2
-
-			blockPart21 = 0
-			blockPart22 = 0
-
-			blockPart21 = blockPart2 >> 4
-			blockPart21 = blockPart21 << 12
-			blockPart21 = blockPart21 >> 8
-
-			blockPart22 = blockPart2 << 12
-			blockPart22 = blockPart22 >> 12
-
-			# 8 bits to 4 using functions S0 and S1
-
-			blockPart2 = self.s0s1(blockPart21, blockPart22)
-
-			temp = 0
-			temp1 = 0
-
-			temp = blockPart2 >> 2
-			temp = temp << 15
-			temp = temp >> 12
-			temp1 = temp1 | temp
-
-			temp = blockPart2 << 15
-			temp = temp >> 13
-			temp1 = temp1 | temp
-
-			temp = blockPart2 >> 1
-			temp = temp << 15
-			temp = temp >> 14
-			temp1 = temp1 | temp
-
-			temp = blockPart2 >> 3
-			temp = temp << 15
-			temp = temp >> 15
-			temp1 = temp1 | temp
-
-			# second xor (blockPart1 and blockPart2)
-
-			block = (((blockPart1 >> 4) ^ blockPart2) << 4) | OriginalBlockPart2
-
-			# SWAP
-
-			temp = 0
-			temp1 = 0
-
-			temp = block >> 4
-			temp = temp << 12
-			temp = temp >> 12
-
-			temp1 = block << 12
-			temp1 = temp1 >> 8
-
-			block = temp1 | temp
-
-			# repeat code above (less the swap) but now using the self.k2p8 --------------------------
-
-			# get part 1 and part 2 from IP result
-
-			blockPart1 = block >> 4
-			blockPart1 = blockPart1 << 12
-			blockPart1 = blockPart1 >> 8
-
-			blockPart2 = block << 12
-			blockPart2 = blockPart2 >> 12
-
-			OriginalBlockPart2 = blockPart2 # will be used in the end
-
-			# Expansion of the blockPart2
-			blockPart2 = self.ep(blockPart2)
-
-			# xor
-			blockPart2 = (blockPart2 ^ self.k2p8)
-
-			# divide in 2 parts the blockPart2
-			blockPart21x = 0
-			blockPart22x = 0
-
-			blockPart21x = blockPart2 >> 4
-			blockPart21x = blockPart21x << 12
-			blockPart21x = blockPart21x >> 8
-
-			blockPart22x = blockPart2 << 12
-			blockPart22x = blockPart22x >> 12
-
-			# 8 bits to 4 using functions S0 and S1
-
-			blockPart2 = self.s0s1(blockPart21x, blockPart22x)
-
-			tempx = 0
-			temp1x = 0
-
-			tempx = blockPart2 >> 2
-			tempx = tempx << 15
-			tempx = tempx >> 12
-			temp1x = temp1x | tempx
-
-			tempx = blockPart2 << 15
-			tempx = tempx >> 13
-			temp1x = temp1x | tempx
-
-			tempx = blockPart2 >> 1
-			tempx = tempx << 15
-			tempx = tempx >> 14
-			temp1x = temp1x | tempx
-
-			tempx = blockPart2 >> 3
-			tempx = tempx << 15
-			tempx = tempx >> 15
-			temp1x = temp1x | tempx
-
-			# second xor (blockPart1 and blockPart2)
-			finalMessageBytes[index] = self.ip1( (((blockPart1 >> 4) ^ blockPart2) << 4) | OriginalBlockPart2 )
-
-		return finalMessageBytes
-
+		return encoded
 
 	def Decode(self, message):
+		decoded = ''
+		j = 0
+		for i in range(0, len(message)):
+			#pega de 8 em 8 bits da mensagem
+			inBin = message[j : j+8]
+			#processo de decriptacao ocorre como na encriptação, apenas a ordem das chaves muda
+			#fk ocorre uma vez com a primeira chave
+			ip = self.encodeFK(inBin, self.k2p8)
+			#SW switch transposicao do resultado de fK, trocando os primeiros 4 bits com os ultimos 4 bits
+			ip = permutation(sw, ip)
+			#fk ocorre uma vez com a segunda chave
+			ip1 = self.encodeFK(ip, self.k1p8)
+			#converte em char e une a mensagem até ela se completar
+			decoded = decoded + binaryStringToChar(ip1)
 
-		finalMessageBytes = message.encode()
+			#verifica se chegou ao fim da mensagem
+			j = j + 8
+			if j==len(message):
+				break
 
-		block = 0
+		return decoded
 
-		blockPart1 = 0
-		blockPart2 = 0
+	def encodeFK(self, message, key):
+		######################## manipulacao de tipos #########################
+		#muda o valor do char para uma string com os valores binarios dele, já vem formatado em 8 bits
+		#x = charToBinaryStringFormat(message)
+		#print("char: ", message, " bin: ", x)
 
-		OriginalBlockPart2 = 0
+		########################### encriptacao ###############################
+		#expansão da segunda metade dos 8-bits do texto plano com o vetor ep
+		rightBits = permutation(ep, message[4:])
+		#xor (ou exclusivo) da ultima expansão com a primeira chave
+		rightBits = xor(rightBits, key, 8)
+		#s0 e s1, com a primeira e segunda metade do resultado
+		rightBits = s0s1( rightBits[:4], rightBits[4:])
+		#permutacao com p4
+		rightBits = permutation(p4, rightBits)
+		#xor dos 4 bits modificados(rightBits, resultado do p4) com os 4 bits da esquerda
+		rightBits = xor(rightBits, message[:4], 4)
+		#os 4 bits a esquerda modificados(rightBits) vão para o inicio, e os 4 bits da direita da mensagem inicial para o final
+		#SW switch transposicao
+		cipher = rightBits + message[4:]
+		#print("cifra ", cipher)
 
-		for index in range(0, len(finalMessageBytes)):
-			block = self.ip( finalMessageBytes[index] )
-
-			# get part 1 and part 2 from IP result
-
-			blockPart1 = block >> 4
-			blockPart1 = blockPart1 << 12
-			blockPart1 = blockPart1 >> 8
-
-			blockPart2 = block << 12
-			blockPart2 = blockPart2 >> 12
-
-			OriginalBlockPart2 = blockPart2 # will be used in the end
-
-			# Expansion of the blockPart2
-			blockPart2 = self.ep(blockPart2)
-
-			# xor of second part of block with key of 10
-			blockPart2 = (blockPart2 ^ self.k1p8)
-
-			# divide in 2 parts the blockPart2
-
-			blockPart21 = 0
-			blockPart22 = 0
-
-			blockPart21 = blockPart2 >> 4
-			blockPart21 = blockPart21 << 12
-			blockPart21 = blockPart21 >> 8
-
-			blockPart22 = blockPart2 << 12
-			blockPart22 = blockPart22 >> 12
-
-			# 8 bits to 4 using functions S0 and S1
-
-			blockPart2 = self.s0s1(blockPart21, blockPart22)
-
-			temp = 0
-			temp1 = 0
-
-			temp = blockPart2 >> 2
-			temp = temp << 15
-			temp = temp >> 12
-			temp1 = temp1 | temp
-
-			temp = blockPart2 << 15
-			temp = temp >> 13
-			temp1 = temp1 | temp
-
-			temp = blockPart2 >> 1
-			temp = temp << 15
-			temp = temp >> 14
-			temp1 = temp1 | temp
-
-			temp = blockPart2 >> 3
-			temp = temp << 15
-			temp = temp >> 15
-			temp1 = temp1 | temp
-
-			# second xor (blockPart1 and blockPart2)
-
-			block = (((blockPart1 >> 4) ^ blockPart2) << 4) | OriginalBlockPart2
-
-			# SWAP
-
-			temp = 0
-			temp1 = 0
-
-			temp = block >> 4
-			temp = temp << 12
-			temp = temp >> 12
-
-			temp1 = block << 12
-			temp1 = temp1 >> 8
-
-			block = temp1 | temp
-
-			# repeat code above (less the swap) but now using the self.k2p8 --------------------------
-
-			# get part 1 and part 2 from IP result
-
-			blockPart1 = block >> 4
-			blockPart1 = blockPart1 << 12
-			blockPart1 = blockPart1 >> 8
-
-			blockPart2 = block << 12
-			blockPart2 = blockPart2 >> 12
-
-			OriginalBlockPart2 = blockPart2 # will be used in the end
-
-			# Expansion of the blockPart2
-			blockPart2 = self.ep(blockPart2)
-
-			# xor
-			blockPart2 = (blockPart2 ^ self.k2p8)
-
-			# divide in 2 parts the blockPart2
-
-			blockPart21x = 0
-			blockPart22x = 0
-
-			blockPart21x = blockPart2 >> 4
-			blockPart21x = blockPart21x << 12
-			blockPart21x = blockPart21x >> 8
-
-			blockPart22x = blockPart2 << 12
-			blockPart22x = blockPart22x >> 12
-
-			# 8 bits to 4 using functions S0 and S1
-
-			blockPart2 = self.s0s1(blockPart21x, blockPart22x)
-
-			tempx = 0
-			temp1x = 0
-
-			tempx = blockPart2 >> 2
-			tempx = tempx << 15
-			tempx = tempx >> 12
-			temp1x = temp1x | tempx
-
-			tempx = blockPart2 << 15
-			tempx = tempx >> 13
-			temp1x = temp1x | tempx
-
-			tempx = blockPart2 >> 1
-			tempx = tempx << 15
-			tempx = tempx >> 14
-			temp1x = temp1x | tempx
-
-			tempx = blockPart2 >> 3
-			tempx = tempx << 15
-			tempx = tempx >> 15
-			temp1x = temp1x | tempx
-
-			# second xor (blockPart1 and blockPart2)
-
-			finalMessageBytes[index] = self.ip1( (((blockPart1 >> 4) ^ blockPart2) << 4) | OriginalBlockPart2 )
-
-		return finalMessageBytes
-
+		return cipher
 
 	def sdesK1K2(self):
-		tempK10 = 0
 
-		tempK101 = 0
-		tempK102 = 0
-
-		shitfPart1 = 0
-		shitfPart2 = 0
-
-		tempKp8 = 0
-
-		# SHIFT 1 part 1 ------------------------------------------
-
-		# 0000001111000000
-
-		tempK101 = self.k10 >> 6
-		tempK101 = tempK101 << 12
-		tempK101 = tempK101 >> 6
-
-
-		# 0000000000100000
-
-		tempK102 = self.k10 >> 5
-		tempK102 = tempK102 << 15
-		tempK102 = tempK102 << 10
-
-		# 0000000000100000 | 0000001111000000 = 0000001111100000
-
-		shitfPart1 = tempK101 | tempK102
-
-		# SHIFT 1 part 2 ------------------------------------------
-
-		# 0000000000011110
-
-		tempK101 = 0
-		tempK101 = self.k10 >> 1
-		tempK101 = tempK101 << 12
-		tempK101 = tempK101 >> 11
-
-		# 0000000000000001
-
-		tempK102 = 0
-		tempK102 = self.k10 << 15
-		tempK102 = tempK102 >> 15
-
-		# 0000000000000001 | 0000000000011110 = 0000000000011111
-
-		shitfPart2 = tempK101 | tempK102
-
-		# the Key after the shift ---------------------------------
-
-		shiftFinal = shitfPart1 | shitfPart2
-
-		# K1 generation -------------------------------------------
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 4
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 8
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 7
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 9
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 3
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 10
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal>> 6
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 11
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 2
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 12
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 5
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 13
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal << 15
-		tempK10 = tempK10 >> 14
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 1
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 15
-		tempKp8 = tempKp8 | tempK10
-
-		############################  atribuição k1p8  ############################
-		self.k1p8 = tempKp8
-		############################  atribuição k1p8  ############################
-
-		# shift 2 part 1.1 ---------------------------------------
-
-		tempK101 = 0
-		tempK102 = 0
-		shitfPart1 = 0
-		shitfPart2 = 0
-
-		# 0000001111000000
-
-		tempK101 = shiftFinal >> 6
-		tempK101 = tempK101 << 12
-		tempK101 = tempK101 >> 6
-
-		# 0000000000100000
-
-		tempK102 = shiftFinal >> 5
-		tempK102 = tempK102 << 15
-		tempK102 = tempK102 >> 10
-
-		# 0000000000100000 | 0000001111000000 = 0000001111100000
-
-		shitfPart1 = tempK101 | tempK102
-
-		# shift 2 part 1.2 ---------------------------------------
-
-		tempK101 = 0
-		tempK102 = 0
-		shitfPart1 = 0
-		shitfPart2 = 0
-
-		# 0000001111000000
-
-		tempK101 = shitfPart1 >> 6
-		tempK101 = tempK101 << 12
-		tempK101 = tempK101 >> 6
-
-		# 0000000000100000
-
-		tempK102 = shitfPart1 >> 5
-		tempK102 = tempK102 << 15
-		tempK102 = tempK102 >> 10
-
-		# 0000000000100000 | 0000001111000000 = 0000001111100000
-
-		shitfPart1 = tempK101 | tempK102
-
-		# shift 2 part 2.1 ---------------------------------------
-
-		tempK101 = 0
-		tempK102 = 0
-		shitfPart1 = 0
-		shitfPart2 = 0
-
-		# 0000000000011110
-
-		tempK101 = shiftFinal >> 1
-		tempK101 = tempK101 << 12
-		tempK101 = tempK101 >> 11
-
-		# 0000000000000001
-
-		tempK102 = shiftFinal << 15
-		tempK102 = tempK102 >> 15
-
-		# 0000000000000001 | 0000000000011110 = 0000000000011111
-
-		shitfPart2 = tempK101 | tempK102
-
-		# shift 2 part 2.2 ---------------------------------------
-
-		tempK101 = 0
-		tempK102 = 0
-		shitfPart1 = 0
-		shitfPart2 = 0
-
-		# 0000000000011110
-
-		tempK101 = shitfPart2 >> 1
-		tempK101 = tempK101 << 12
-		tempK101 = tempK101 >> 11
-
-		# 0000000000000001
-
-		tempK102 = shitfPart2 << 15
-		tempK102 = tempK102 >> 15
-
-		# 0000000000000001 | 0000000000011110 = 0000000000011111
-
-		shitfPart2 = tempK101 | tempK102
-
-		# the Key after the shift ---------------------------------
-
-		shiftFinal = shitfPart1 | shitfPart2
-
-		# K2 generation ----------------------------------------
-		tempKp8 = 0
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 4
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 8
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 7
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 9
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 3
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 10
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 6
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 11
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 2
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 12
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 5
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 13
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal << 15
-		tempK10 = tempK10 >> 14
-		tempKp8 = tempKp8 | tempK10
-
-		tempK10 = 0
-		tempK10 = shiftFinal >> 1
-		tempK10 = tempK10 << 15
-		tempK10 = tempK10 >> 15
-		tempKp8 = tempKp8 | tempK10
-
-		############################  atribuição k2p8  ############################
-		self.k2p8 = tempKp8
-		############################  atribuição k2p8  ############################
-
-	# initial permutation
-	def ip(self, value):
-		tempValue = 0
-		tempPermutation = 0
-
-		tempPermutation = 0
-		tempPermutation = value >> 6
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 8
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 2
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 9
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 5
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 10
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 7
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 11
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 4
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 12
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value << 15
-		tempPermutation = tempPermutation >> 13
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 3
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 14
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 1
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 15
-		tempValue = tempValue | tempPermutation
-
-		return tempValue
-
-
-	# initial permutation -1, for decrypt
-	def ip1(self, value):
-		tempValue = 0
-		tempPermutation = 0
-
-		tempPermutation = 0
-		tempPermutation = value >> 4
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 8
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 7
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 9
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 5
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 10
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 3
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 11
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 1
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 12
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 6
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 13
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value << 15
-		tempPermutation = tempPermutation >> 14
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 2
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 15
-		tempValue = tempValue | tempPermutation
-
-		return tempValue
-
-
-	# expansion of 4 bits in 8
-	def ep(self, value):
-		tempValue = 0
-		tempPermutation = 0
-
-		tempPermutation = 0
-		tempPermutation = value << 15
-		tempPermutation = tempPermutation >> 8
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 3
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 9
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 2
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 10
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 1
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 11
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 2
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 12
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 1
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 13
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value << 15
-		tempPermutation = tempPermutation >> 14
-		tempValue = tempValue | tempPermutation
-
-		tempPermutation = 0
-		tempPermutation = value >> 3
-		tempPermutation = tempPermutation << 15
-		tempPermutation = tempPermutation >> 15
-		tempValue = tempValue | tempPermutation
-
-		return tempValue
-
-	# s0s2, função baseada na matriz
-	def s0s1(self, blockPart21, blockPart22):
-
-	  i1 = blockPart21 >> 6
-	  i1 = i1 << 14
-	  i1 = i1 >> 14
-
-	  j1 = blockPart22 >> 2
-	  j1 = j1 << 14
-	  j1 = j1 >> 14
-
-	  i2 = blockPart21 >> 4
-	  i2 = i2 << 14
-	  i2 = i2 >> 14
-
-	  j2 = blockPart22 << 14
-	  j2 = j2 >> 14
-
-	  resultPart1 = self.tableS0[j1][i1] << 2
-
-	  resultPart2 = self.tableS1[j2][i2]
-
-	  return (resultPart1 | resultPart2)
-
+		#gera uma string de binario correspondente ao valor decimal passado
+		self.k10 = decimalToBinaryString(self.k10)
+
+		#geração de k2
+		#Permutacao inicial de 10 (p10)
+		tempk1 = permutation(p10, self.k10)
+		#LS-1 da primeira e segunda metade, posicoes finais de cada elemento ja definidos na constante ls1
+		tempk1 = permutation(ls1, tempk1)
+		#permutacao SW (p8) do resultado
+		self.k1p8 = permutation(p8, tempk1)
+
+		#geração de k2
+		#LS-2 do resultado de LS-1
+		tempk2 = permutation(ls2, tempk1)
+		#permutacao SW (p8) do resultado
+		self.k2p8 = permutation(p8, tempk2)
+		#print("k ", self.k10)
+		#print("k1 ", self.k1p8)
+		#print("k2 ",self.k2p8)
+
+#faz a permutacao da nova ordem que ficará o novo dado a ordenar, com o dado a ser manipulado(toOrder)
+def permutation(order, toOrder):
+	ordered = ''
+	for i in range(len(order)):
+		ordered = ordered + toOrder[order[i]-1]
+	return ordered
+
+#são passados dois blocos de 4 bits e devolvidos um de 4 bits
+def s0s1(left4, right4):
+	i = int(left4[0] + left4[3], 2)
+	j = int(left4[1] + left4[2], 2)
+	left4 = bin(tableS0[i][j])[2:].zfill(4)
+	i = int(right4[0] + right4[3], 2)
+	j = int(right4[1] + right4[2], 2)
+	right4 = bin(tableS0[i][j])[2:].zfill(4)
+	#print("s0s1", binaryStringToCharFormat(left4 + right4))
+	#print("s0s1", (left4 + right4))
+	return left4 + right4
+
+#gera uma string de binario correspondente ao valor decimal passado
+def decimalToBinaryString(value):
+	#transforma o char em valor inteiro
+	x = ''
+	for i in range(10):
+		if value - pot2[i] >= 0:
+			x = x + '1'
+			value = value - pot2[i]
+		else:
+			x = x + '0'
+	return x
+
+#gera binario de uma string
+#só será passado um char ao invés de string completa, considerando a cifra de bloco
+def charToBinaryString(message):
+	"""
+	print("bbbbbbbbbbbbbbbb", message)
+	print("bbbbbbbbbbbbbbbb", message.encode())
+	print("bbbbbbbbbbbbbbbb", int.from_bytes(message.encode(), 'big'))
+	print("bbbbbbbbbbbbbbbb", bin(int.from_bytes(message.encode(), 'big')))
+	"""
+	return bin(int.from_bytes(message.encode(), 'big'))
+
+#formata o resultado retirando o "0b" inicial que identifica o binario
+def charToBinaryStringFormat(message):
+	n = charToBinaryString(message)
+	#retira os bits iniciais "0b" (usando a mensagem a partir do 3 caractere)
+	#ex: o método acima retorna '0b10011001' retira-se os 2 primeiros chars ('0b' representa o formato binário) ficando apenas '10011001'
+	n = n[2:]
+	#caso a string venha menor que 8 (pois não considera os zeros a esquerda), a completa adicionando os zero não significativos a esquerda
+	#adequando-a ao tamanho de 8 caracteres, cada representando 1 bit
+	while len(n)<8:
+		n = '0' + n
+	return n
+
+def binaryStringToChar(message):
+	n = int(message, 2)
+	return chr(n)
+	"""
+	print('n = ', n)
+	print((n.bit_length()+7) // 8)
+	print(n.to_bytes( 1, 'big'))
+	print(n.to_bytes( (n.bit_length()+7) // 8, 'big').decode())
+	return n.to_bytes( (n.bit_length()+7) // 8, 'big').decode()
+	"""
+
+#formata o resultado adicionando o "0b" inicial que identifica o binario
+def binaryStringToCharFormat(message):
+
+	n = '0b' + message
+	#print("msg", n)
+	n = binaryStringToChar(n)
+	#print(n)
+	n = '0b' + n
+	return n
+
+def xor(value1, value2, valueSize):
+	#stop here
+
+	n = ''
+	for i in range(valueSize):
+		if value1[i]==value2[i]:
+			n = n + '0'
+		else:
+			n = n + '1'
+	return n
+
+#SW switch transposicao do resultado de fK, trocando os primeiros 4 bits com os ultimos 4 bits
+def SW(data):
+	x = data[4:] + data[:4]
+	return x
