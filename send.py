@@ -2,7 +2,7 @@
 class Send():
     def __init__(self):
         self.msg = ''
-        self.new = True
+        self.new = False
         self.con = None
 
     def put(self, msg):

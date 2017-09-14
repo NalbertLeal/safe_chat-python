@@ -22,7 +22,7 @@ class Sdes():
 		self.sdesK1K2()
 
 	#recebe uma mensagem string em texto plano (ex.: 'teste')
-	#gera uma string  de tamanho múltiplo de 8, 
+	#gera uma string  de tamanho múltiplo de 8,
 	#no qual a cada 8, equivale ao char criptografado
 	def Encode(self, message):
 		encoded = ''
@@ -92,7 +92,7 @@ class Sdes():
 	def sdesK1K2(self):
 
 		#gera uma string de binario correspondente ao valor decimal passado
-		self.k10 = decimalToBinaryString(self.k10)
+		# self.k10 = decimalToBinaryString(self.k10)
 
 		#geração de k2
 		#Permutacao inicial de 10 (p10)
@@ -174,4 +174,3 @@ def xor(value1, value2, valueSize):
 		else:
 			n = n + '1'
 	return n
-

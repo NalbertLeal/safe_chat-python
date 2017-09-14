@@ -8,11 +8,11 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 3:
         print('user: ' + sys.argv[1], ', host: ' + sys.argv[2])
-        c = Client(user=sys.argv[1], host=sys.argv[2])
+        c = Client(user=sys.argv[1], host=sys.argv[2], port=5354)
         c.run()
     elif len(sys.argv) == 2:
         print('>>> Initiating the server')
-        s = Server(user=sys.argv[1])
+        s = Server(user=sys.argv[1], port=5354)
         s.run()
     else:
         print(""">>> Must pass the username (client and server) and client need\n

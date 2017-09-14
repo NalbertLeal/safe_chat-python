@@ -101,8 +101,6 @@ class Bmp_image_proccess():
                 message_size += imgarray[0, w][1]
                 message_size += imgarray[0, w][2]
 
-            print(message_size, '\n')
-
             red_sum = 0
             counter = 0
             message_counter = 0
