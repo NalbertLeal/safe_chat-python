@@ -21,12 +21,17 @@ class des():
 
 		self.sdesK1K2()
 
+	#recebe uma mensagem string em texto plano (ex.: 'teste')
+	#gera uma string  de tamanho múltiplo de 8, 
+	#no qual a cada 8, equivale ao char criptografado
 	def Encode(self, message):
 		encoded = ''
+		#encripta cada caractere da mensagem por vez
+		#gerando uma string cujos valores são apenas 0 e 1 (ex.:'10101010'), o qual representa o caractere encriptado
 		for i in range(0, len(message)):
-			#muda o valor do char para uma string com os valores binarios dele, trazendo formatado em 8 bits
+			######################## manipulacao de tipos #########################
+			#muda o valor do char para uma string com os valores binarios dele, trazendo formatado com tamanho 8 bits
 			inBin = charToBinaryStringFormat(message[i])
-			print(inBin)
 			#fk ocorre uma vez com a primeira chave
 			ip = self.encodeFK(inBin, self.k1p8)
 			#SW switch transposicao do resultado de fK, trocando os primeiros 4 bits com os ultimos 4 bits
@@ -34,18 +39,19 @@ class des():
 			ip = permutation(sw, ip)
 			#fk ocorre uma vez com a segunda chave
 			ip1 = self.encodeFK(ip, self.k2p8)
-			#print(inBin, "=>>", ip1)
-			#print(binaryStringToChar(inBin), "=>>", binaryStringToChar(ip1))
-			#print(ip1, "=", charToBinaryStringFormat(binaryStringToChar(ip1)), "/char:", binaryStringToChar(ip1))
-			encoded = encoded + ip1 #binaryStringToChar(ip1)
+			#une a mensagem em binário até ela possuir todos os caracteres encriptados
+			encoded = encoded + ip1
 
+		#no final une todas as strings que representam os caracteres encriptados
 		return encoded
 
+	#recebe a string que representa todos os caracteres encriptados
+	#e retorna uma string em texto plano decriptada
 	def Decode(self, message):
 		decoded = ''
 		j = 0
 		for i in range(0, len(message)):
-			#pega de 8 em 8 bits da mensagem
+			#pega de 8 em 8 bits da mensagem (já que representa um caractere criptogrado) para decriptar
 			inBin = message[j : j+8]
 			#processo de decriptacao ocorre como na encriptação, apenas a ordem das chaves muda
 			#fk ocorre uma vez com a primeira chave
@@ -64,13 +70,9 @@ class des():
 
 		return decoded
 
+	#funcao fk, comum a encriptacao e a decriptacao
 	def encodeFK(self, message, key):
-		######################## manipulacao de tipos #########################
-		#muda o valor do char para uma string com os valores binarios dele, já vem formatado em 8 bits
-		#x = charToBinaryStringFormat(message)
-		#print("char: ", message, " bin: ", x)
-
-		########################### encriptacao ###############################
+		########################### funcao fK ###############################
 		#expansão da segunda metade dos 8-bits do texto plano com o vetor ep
 		rightBits = permutation(ep, message[4:])
 		#xor (ou exclusivo) da ultima expansão com a primeira chave
@@ -82,12 +84,11 @@ class des():
 		#xor dos 4 bits modificados(rightBits, resultado do p4) com os 4 bits da esquerda
 		rightBits = xor(rightBits, message[:4], 4)
 		#os 4 bits a esquerda modificados(rightBits) vão para o inicio, e os 4 bits da direita da mensagem inicial para o final
-		#SW switch transposicao
 		cipher = rightBits + message[4:]
-		#print("cifra ", cipher)
 
 		return cipher
 
+	#gera as chaves k1 (k1p8) e k2 (k2p8)
 	def sdesK1K2(self):
 
 		#gera uma string de binario correspondente ao valor decimal passado
@@ -106,9 +107,6 @@ class des():
 		tempk2 = permutation(ls2, tempk1)
 		#permutacao SW (p8) do resultado
 		self.k2p8 = permutation(p8, tempk2)
-		#print("k ", self.k10)
-		#print("k1 ", self.k1p8)
-		#print("k2 ",self.k2p8)
 
 #faz a permutacao da nova ordem que ficará o novo dado a ordenar, com o dado a ser manipulado(toOrder)
 def permutation(order, toOrder):
@@ -117,22 +115,26 @@ def permutation(order, toOrder):
 		ordered = ordered + toOrder[order[i]-1]
 	return ordered
 
-#são passados dois blocos de 4 bits e devolvidos um de 4 bits
+#resultado de s0 e s1, são passados dois blocos de 4 bits e devolvidos um de 4 bits, já concatenados a partir do resultado s0 e s1
 def s0s1(left4, right4):
+	#encontra as posições a se busca na matriz s0
 	i = int(left4[0] + left4[3], 2)
 	j = int(left4[1] + left4[2], 2)
+	#busca na constante definida globalmente, o resultado do s0
 	left4 = bin(tableS0[i][j])[2:].zfill(4)
+
+	#mesmo processo anterior, mas usando a constante s1 e os elementos da direita
 	i = int(right4[0] + right4[3], 2)
 	j = int(right4[1] + right4[2], 2)
 	right4 = bin(tableS0[i][j])[2:].zfill(4)
-	#print("s0s1", binaryStringToCharFormat(left4 + right4))
-	#print("s0s1", (left4 + right4))
+
 	return left4 + right4
 
 #gera uma string de binario correspondente ao valor decimal passado
 def decimalToBinaryString(value):
-	#transforma o char em valor inteiro
+	#transforma o char que representa o inteiro em um valor inteiro de fato
 	x = ''
+	#só é usando para a chave de 10 bits, entao o tamanho é estatico
 	for i in range(10):
 		if value - pot2[i] >= 0:
 			x = x + '1'
@@ -144,12 +146,6 @@ def decimalToBinaryString(value):
 #gera binario de uma string
 #só será passado um char ao invés de string completa, considerando a cifra de bloco
 def charToBinaryString(message):
-	"""
-	print("bbbbbbbbbbbbbbbb", message)
-	print("bbbbbbbbbbbbbbbb", message.encode())
-	print("bbbbbbbbbbbbbbbb", int.from_bytes(message.encode(), 'big'))
-	print("bbbbbbbbbbbbbbbb", bin(int.from_bytes(message.encode(), 'big')))
-	"""
 	return bin(int.from_bytes(message.encode(), 'big'))
 
 #formata o resultado retirando o "0b" inicial que identifica o binario
@@ -164,30 +160,13 @@ def charToBinaryStringFormat(message):
 		n = '0' + n
 	return n
 
+#formata a string que representa o binario de um char no char correspondente
 def binaryStringToChar(message):
 	n = int(message, 2)
 	return chr(n)
-	"""
-	print('n = ', n)
-	print((n.bit_length()+7) // 8)
-	print(n.to_bytes( 1, 'big'))
-	print(n.to_bytes( (n.bit_length()+7) // 8, 'big').decode())
-	return n.to_bytes( (n.bit_length()+7) // 8, 'big').decode()
-	"""
 
-#formata o resultado adicionando o "0b" inicial que identifica o binario
-def binaryStringToCharFormat(message):
-
-	n = '0b' + message
-	#print("msg", n)
-	n = binaryStringToChar(n)
-	#print(n)
-	n = '0b' + n
-	return n
-
+#xor de dois valores
 def xor(value1, value2, valueSize):
-	#stop here
-
 	n = ''
 	for i in range(valueSize):
 		if value1[i]==value2[i]:
@@ -196,7 +175,3 @@ def xor(value1, value2, valueSize):
 			n = n + '1'
 	return n
 
-#SW switch transposicao do resultado de fK, trocando os primeiros 4 bits com os ultimos 4 bits
-def SW(data):
-	x = data[4:] + data[:4]
-	return x
